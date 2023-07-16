@@ -48,9 +48,7 @@ void pre() {
             matmal(pw[i][j], pw[i][0]);
         }
     }
-    fib[1] = 1;
-    fib[2] = 2;
-    fib[3] = 3;
+    fib[1] = 1, fib[2] = 2, fib[3] = 3;
     for (int i = 4; ; i++) {
         fib[i] = fib[i - 1] + fib[i - 2] + fib[i - 3];
         if (fib[i] > 1000000) break;
@@ -61,8 +59,6 @@ void mat_expo(int t[][N], ll y) {
     for (int i = 0; i <= nd; i++) {
         int x = y % base;
         y /= base;
-        if (x > 0) {
-            matmal(t, pw[i][x - 1]);
-        }
+        if (x > 0) matmal(t, pw[i][x - 1]);
     }
 }
