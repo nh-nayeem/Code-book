@@ -1,32 +1,48 @@
-const int md=100000007;
-int bigpow(int a,int b)
+// Returns minimum x for which a ^ x % m = b % m.
+int get_x(int a, int b, int m) 
 {
-    if(b==0) return 1;
-    int x=bigpow(a,b>>1);
-    x=(1LL*x*x)%md;
-    if(b&1) x=(1LL*x*a)%md;
-    return x;
-}
-int baby_step_giant_step(int a,int b)
-{
-    int m=ceil(sqrt(md));
-    map<int,int> mp;
-    int x=1;
-    for(int i=0;i<m;i++)
+    if(a == 0)
+        return b == 0 ? 1 : -1;
+    a%=m, b%=m;
+    int k=1, add=0, g;
+    while((g=__gcd(a, m))>1)
     {
-        mp[x]=i;
-        x=(1LL*x*a)%md;
+        if(b == k)
+            return add;
+        if(b % g)
+            return -1;
+        b/=g, m/=g, ++add;
+        k=(k*1ll*a/g)%m;
     }
-    x=bigpow(x,md-2);
-    int y=b;
-    for(int i=0;i<m;i++)
+
+    int n=sqrt(m)+1;
+    int an=1;
+    for(int i=0; i<n; ++i)
+        an=(an*1ll*a)%m;
+
+    unordered_map<int, int> vals;
+    for(int q=0, cur=b; q<=n; ++q)
     {
-        if(mp.find(y)!=mp.end())
+        vals[cur]=q;
+        cur=(cur*1ll*a)%m;
+    }
+
+    for(int p=1, cur=k; p<=n; ++p)
+    {
+        cur=(cur*1ll*an)%m;
+        if(vals.count(cur))
         {
-            return i*m+mp[y];
+            int ans=n*p-vals[cur]+add;
+            return ans;
         }
-        y=(1LL*y*x)%md;
     }
-    // assert(false);
     return -1;
+}
+
+int main()
+{
+    int a=2;
+    int b=16;
+    int m=20;
+    cout<<get_x(a,b,m)<<endl;
 }
