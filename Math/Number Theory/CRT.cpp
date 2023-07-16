@@ -1,14 +1,21 @@
-pll GeneralCRT(pll a, pll b){
-    if(a.second < b.second) swap(a, b);
-    ll x, y; egcd(a.second, b.second, x, y);
-    ll g = a.second * x + b.second * y;
-    ll l = a.second / g * b.second;
-    if((b.first - a.first) % g) return {-1, -1}; // No Solution
-
-    ll c = (b.first - a.first) % b.second;
-    c = (c * x) % b.second;
-    c = c / g * a.second;
-    c += a.first;
-    if(c < 0) c += l;
-    return {c, l};
+using T = ll;
+T extended_euclid(T a, T b, T &x, T &y) {
+  T xx = y = 0;
+  T yy = x = 1;
+  while (b) {
+    T q = a / b;
+    T t = b; b = a % b; a = t;
+    t = xx; xx = x - q * xx; x = t;
+    t = yy; yy = y - q * yy; y = t;
+  }
+  return a;
+}
+pair<T, T> CRT(T a1, T m1, T a2, T m2) {
+  T p, q;
+  T g = extended_euclid(m1, m2, p, q);
+  if (a1 % g != a2 % g) return make_pair(0, -1);
+  T m = m1 / g * m2;
+  p = (p % m + m) % m;
+  q = (q % m + m) % m;
+  return make_pair(((__int128)p * a2 % m * (m1 / g) % m + (__int128)q * a1 % m * (m2 / g) % m) %  m, m);
 }
