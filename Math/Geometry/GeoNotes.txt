@@ -15,3 +15,4 @@ bool operator < (Point p, Point q) const{
   if(sgn(p) != sgn(q)) return sgn(p) < sgn(q);
   return getCross(p, q) > 0;
 }
+minimum distance of polygon P, Q = min((0, 0), P - Q)
