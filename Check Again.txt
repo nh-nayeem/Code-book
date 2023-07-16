@@ -1,2 +1,4 @@
 These are to be checked again:
-
+dsu on tree
+hld
+wavelet tree
