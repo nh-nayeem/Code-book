@@ -1,40 +1,68 @@
-const int mod = 1e9 + 7;
-typedef long long ll;
-typedef vector<vector<ll> > matrix;
-matrix getmat(int r, int c, ll val = 0)
-{
-    vector<vector<ll> > ret(r, vector<ll>(c, val));
-    return ret;
+using ll = long long;
+int mod = 1;
+const int N = 3;
+void make_identity(int a[][N]) {
+    memset(a, 0, N * N * sizeof(int));
+    for (int i = 0; i < N; i++) a[i][i] = 1;
 }
-matrix Identity(int r)
-{
-    auto ret = getmat(r, r);
-    for (int i = 0; i < r; i++) ret[i][i] = 1;
-    return ret;
-}
-matrix matmal(matrix x, matrix y)
-{
-    int r1 = x.size(), c1 = x[0].size(), r2 = y.size(), c2 = y[0].size();
-    assert(c1 == r2);
-    auto  ret = getmat(r1, c2);
-    for (int i = 0; i < r1; i++)
-    {
-        for (int j = 0; j < c2; j++)
-        {
-            for (int k = 0; k < r2; k++)
-            {
-                ret[i][j] += (x[i][k] * y[k][j]) % mod;
-                ret[i][j] %= mod;
+void matmal(int a[][N], int b[][N]) {
+    int c[N][N] = {{0}};
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            for (int k = 0; k < N; k++) {
+                c[i][j] = (c[i][j] + (a[i][k] * 1ll * b[k][j]) % mod);
+                if (c[i][j] >= mod) c[i][j] -= mod;
             }
         }
+    } 
+
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            a[i][j] = c[i][j];
+        }
     }
-    return ret;
 }
-matrix bigmod(matrix x, ll b)
-{
-    if (b == 0) return Identity(x.size());
-    auto ret = bigmod(x, b >> 1);
-    ret = matmal(ret, ret);
-    if (b & 1) ret = matmal(ret, x);
-    return ret;
+const int base = 10000;
+const int nd = 5;
+int pw[nd + 1][base][N][N];
+int fib[200], sz;
+void pre() {
+    memset(pw, 0, sizeof(pw));
+    mod = 1000000;
+    pw[0][0][1][0] = 1;
+    pw[0][0][2][1] = 1;
+    pw[0][0][0][2] = pw[0][0][1][2] = pw[0][0][2][2] = 1;
+    for (int i = 0; i <= nd; i++) {
+        if (i) {
+            make_identity(pw[i][0]);
+            for (int j = 1; j <= base; j++) {
+                matmal(pw[i][0], pw[i - 1][0]);
+            }
+        }
+        for (int j = 1; j < base; j++) {
+            for (int x = 0; x < N; x++) {
+                for (int y = 0; y < N; y++) {
+                    pw[i][j][x][y] = pw[i][j - 1][x][y];
+                }
+            }
+            matmal(pw[i][j], pw[i][0]);
+        }
+    }
+    fib[1] = 1;
+    fib[2] = 2;
+    fib[3] = 3;
+    for (int i = 4; ; i++) {
+        fib[i] = fib[i - 1] + fib[i - 2] + fib[i - 3];
+        if (fib[i] > 1000000) break;
+        sz = i;
+    }
+}
+void mat_expo(int t[][N], ll y) {
+    for (int i = 0; i <= nd; i++) {
+        int x = y % base;
+        y /= base;
+        if (x > 0) {
+            matmal(t, pw[i][x - 1]);
+        }
+    }
 }
