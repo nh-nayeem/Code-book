@@ -1,0 +1,17 @@
+Rotation Matrix :
+| cosθ  -sinθ   1 | 
+| sinθ   cosθ   1 |
+|  0      0     1 |
+
+Rotate a Point Q by  θ degrees counter-clockwise around the point P(x,y): 
+| cosθ   -sinθ   x(1-cosθ) + ysinθ | 
+| sinθ    cosθ   y(1-cosθ) - xsinθ |
+|  0        0             1        |
+
+Sorting points based on polar angle:
+bool sgn (Point p) {return p.y < 0 || (p.y == 0 && p.x < 0);}
+
+bool operator < (Point p, Point q) const{
+  if(sgn(p) != sgn(q)) return sgn(p) < sgn(q);
+  return getCross(p, q) > 0;
+}

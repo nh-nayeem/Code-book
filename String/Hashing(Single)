@@ -1,0 +1,25 @@
+ll pw[N];
+int base=31;
+void pre()                  ///must call pre()
+{
+    pw[0]=1;
+    for(int i=1;i<N;i++)pw[i] = (pw[i-1]*base)%mod;
+}
+struct Hashing
+{
+    ll hsh[N];
+    string s;
+    Hashing(string _s){s=_s,memset(hsh,0,sizeof hsh);build();}
+    void build()
+    {
+        for(int i=s.length()-1;i>=0;i--){
+            hsh[i] = (hsh[i+1]*base+s[i]-'a'+1)%mod;
+        }
+    }
+    int getHash(int l,int r)
+    {
+        ll res = (hsh[l] - hsh[r+1]*pw[r-l+1])%mod;
+        if(res<0)res+=mod;
+        return res;
+    }
+};
