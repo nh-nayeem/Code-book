@@ -16,3 +16,4 @@ bool operator < (Point p, Point q) const{
   return getCross(p, q) > 0;
 }
 minimum distance of polygon P, Q = min((0, 0), P - Q)
+Pick's theorem: A = I + B/2 - 1; I = int(A), A = area(A), B = bd(A)
