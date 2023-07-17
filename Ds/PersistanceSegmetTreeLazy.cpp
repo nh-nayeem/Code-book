@@ -1,16 +1,8 @@
-/*............bismillahir rahmanir rahim...............*/
-
-// author :  Muhammad Najmul Hasan Nayeem (SUST MATH 17)
-
 #include<bits/stdc++.h>
-
 using namespace std;
-
 #define ff first
 #define ss second
-
 typedef long long ll;
-
 const int N = 2e5 + 5;
 struct nod{
     int l, r; 
@@ -125,14 +117,6 @@ void solve() {
 // tested in https://atcoder.jp/contests/abc253/tasks/abc253_f
 int32_t main() {
     ios_base::sync_with_stdio(false);cin.tie(NULL);cout.tie(NULL);
-    int q=1;
-    //cin>>q;
-    // SI(q);
-    for(int kase=1; kase<=q; kase++)
-    {
-        // cout<<"Case "<<kase<<":\n";
-        // printf("Case %d: ",kase );
-        solve();
-    }
+    solve();
     return 0;
 }
