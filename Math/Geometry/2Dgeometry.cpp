@@ -1046,9 +1046,16 @@ vector<PT> half_plane_intersection(vector<HP> h) {
     }
     return hull;
 }
+void re_order(vector<PT> &v) {
+    int p = 0, n = v.size();
+    for (int i = 0; i < n; i++) 
+        if (v[i].x < v[p].x || (v[i].x == v[p].x && v[i].y < v[p].y)) p = i;
+    rotate(v.begin(), v.begin() + p, v.end());
+}
 // a and b are strictly convex polygons of DISTINCT points
 // returns a convex hull of their minkowski sum with distinct points
 vector<PT> minkowski_sum(vector<PT> &a, vector<PT> &b) {
+    re_order(a); re_order(b);
     int n = (int)a.size(), m = (int)b.size();
     int i = 0, j = 0; //assuming a[i] and b[j] both are (left, bottom)-most points
     vector<PT> c;
@@ -1062,6 +1069,7 @@ vector<PT> minkowski_sum(vector<PT> &a, vector<PT> &b) {
         if (t == 0) p1 = a[i] + b[j];
         if (p1 == c[0]) break;
         c.push_back(p1);
+        assert(c.size() < 5e6);
     }
     return c;
 }
