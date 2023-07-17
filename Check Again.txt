@@ -1,3 +1,4 @@
 These are to be checked again:
 dsu on tree
-
+half plane intersection
+power tower
