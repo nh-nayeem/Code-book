@@ -63,6 +63,11 @@ void polar_sort(vector<PT> &v) { // sort points in counterclockwise
         return make_tuple(half(a), 0.0, a.norm2()) < make_tuple(half(b), cross(a, b), b.norm2());
     });
 }
+void polar_sort(vector<PT> &v, PT o) { // sort points in counterclockwise with respect to point o
+    sort(v.begin(), v.end(), [&](PT a,PT b) {
+        return make_tuple(half(a - o), 0.0, (a - o).norm2()) < make_tuple(half(b - o), cross(a - o, b - o), (b - o).norm2());
+    });
+}
 struct line {
     PT a, b; // goes through points a and b
     PT v; double c;  //line form: direction vec [cross] (x, y) = c 
@@ -116,6 +121,7 @@ struct line {
 };
 // find a point from a through b with distance d
 PT point_along_line(PT a, PT b, double d) {
+    assert(a != b);
     return a + (((b - a) / (b - a).norm()) * d);
 }
 // projection point c onto line through a and b  assuming a != b
@@ -125,7 +131,7 @@ PT project_from_point_to_line(PT a, PT b, PT c) {
 // reflection point c onto line through a and b  assuming a != b
 PT reflection_from_point_to_line(PT a, PT b, PT c) {
     PT p = project_from_point_to_line(a,b,c);
-    return point_along_line(c, p, 2.0 * dist(c, p));
+    return p + p - c;
 }
 // minimum distance from point c to line through a and b
 double dist_from_point_to_line(PT a, PT b, PT c) {
@@ -143,7 +149,7 @@ bool is_point_on_seg(PT a, PT b, PT p) {
 // minimum distance point from point c to segment ab that lies on segment ab
 PT project_from_point_to_seg(PT a, PT b, PT c) {
     double r = dist2(a, b);
-    if (fabs(r) < eps) return a;
+    if (sign(r) == 0) return a;
     r = dot(c - a, b - a) / r;
     if (r < 0) return a;
     if (r > 1) return b;
@@ -154,7 +160,7 @@ double dist_from_point_to_seg(PT a, PT b, PT c) {
     return dist(c, project_from_point_to_seg(a, b, c));
 }
 // 0 if not parallel, 1 if parallel, 2 if collinear
-bool is_parallel(PT a, PT b, PT c, PT d) {
+int is_parallel(PT a, PT b, PT c, PT d) {
     double k = fabs(cross(b - a, d - c));
     if (k < eps){
         if (fabs(cross(a - b, a - c)) < eps && fabs(cross(c - d, c - a)) < eps) return 2;
@@ -410,7 +416,7 @@ int tangent_lines_from_point(PT p, double r, PT q, line &u, line &v) {
 int tangents_lines_from_circle(PT c1, double r1, PT c2, double r2, bool inner, line &u, line &v) {
     if (inner) r2 = -r2;
     PT d = c2 - c1;
-    double dr = r1 - r2, d2 = d.norm(), h2 = d2 - dr * dr;
+    double dr = r1 - r2, d2 = d.norm2(), h2 = d2 - dr * dr;
     if (d2 == 0 || h2 < 0) {
         assert(h2 != 0);
         return 0;
@@ -834,69 +840,7 @@ double polygon_line_intersection(vector<PT> p, PT a, PT b) {
 pair<PT, PT> convex_line_intersection(vector<PT> &p, PT a, PT b) {
 	return {{0, 0}, {0, 0}};
 }
-// minimum distance from a point to a convex polygon
-// it assumes point does not lie strictly inside the polygon
-double dist_from_point_to_polygon(vector<PT> &v, PT p) { // O(log n)
-    int n = (int)v.size();
-    if (n <= 3) {
-    	double ans = inf;
-	    for(int i = 0; i < n; i++) ans = min(ans, dist_from_point_to_seg(v[i], v[(i + 1) % n], p));
-	    return ans;
-	}
-    PT bscur, bs = angle_bisector(v[n - 1], v[0], v[1]);
-    int ok,  i,  pw = 1,  ans = 0,  sgncur,  sgn = sign(cross(bs, p - v[0]));
-    while (pw <= n) pw <<= 1;
-    while ((pw >>= 1)) {
-        if ((i = ans + pw) < n) {
-            bscur = angle_bisector(v[i - 1], v[i], v[(i + 1) % n]);
-            sgncur = sign(cross(bscur, p - v[i]));
-            ok = sign(cross(bs, bscur)) >= 0 ? (sgn >= 0 || sgncur <= 0) : (sgn >= 0 && sgncur <= 0);
-            if (ok) ans = i, bs = bscur, sgn = sgncur;
-        }
-    }
-    return dist_from_point_to_seg(v[ans], v[(ans + 1) % n], p);
-}
-// minimum distance from convex polygon p to line ab
-// returns 0 is it intersects with the polygon
-// top - upper right vertex
-double dist_from_polygon_to_line(vector<PT> &p, PT a, PT b, int top) { //O(log n)
-	PT orth = (b - a).perp();
-	if (orientation(a, b, p[0]) > 0) orth = (a - b).perp();
-	int id = extreme_vertex(p, orth, top);
-	if (dot(p[id] - a, orth) > 0) return 0.0; //if orth and a are in the same half of the line, then poly and line intersects
-	return dist_from_point_to_line(a, b, p[id]); //does not intersect
-}
-// minimum distance from a convex polygon to another convex polygon
-double dist_from_polygon_to_polygon(vector<PT> &p1, vector<PT> &p2) { // O(n log n)
-    double ans = inf;
-    for (int i = 0; i < p1.size(); i++) {
-        ans = min(ans, dist_from_point_to_polygon(p2, p1[i]));
-    }
-    for (int i = 0; i < p2.size(); i++) {
-        ans = min(ans, dist_from_point_to_polygon(p1, p2[i]));
-    }
-    return ans;
-}
-// maximum distance from a convex polygon to another convex polygon
-double maximum_dist_from_polygon_to_polygon(vector<PT> &u, vector<PT> &v){ //O(n)
-    int n = (int)u.size(), m = (int)v.size();
-    double ans = 0;
-    if (n < 3 || m < 3) {
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < m; j++) ans = max(ans, dist2(u[i], v[j]));
-        }
-        return sqrt(ans);
-    }
-    if (u[0].x > v[0].x) swap(n, m), swap(u, v);
-    int i = 0, j = 0, step = n + m + 10;
-    while (j + 1 < m && v[j].x < v[j + 1].x) j++ ;
-    while (step--) {
-        if (cross(u[(i + 1)%n] - u[i], v[(j + 1)%m] - v[j]) >= 0) j = (j + 1) % m;
-        else i = (i + 1) % n;
-        ans = max(ans, dist2(u[i], v[j]));
-    }
-    return sqrt(ans);
-}
+
 pair<PT, int> point_poly_tangent(vector<PT> &p, PT Q, int dir, int l, int r) {
     while (r - l > 1) {
         int mid = (l + r) >> 1;
@@ -930,6 +874,74 @@ pair<int, int> tangents_from_point_to_polygon(vector<PT> &p, PT Q){
     int ccw = point_poly_tangent(p, Q, -1, 0, (int)p.size() - 1).second;
     return make_pair(cw, ccw);
 }
+
+// minimum distance from a point to a convex polygon
+// it assumes point lie strictly outside the polygon
+double dist_from_point_to_polygon(vector<PT> &p, PT z) {
+    double ans = inf;
+    int n = p.size();
+    if (n <= 3) {
+        for(int i = 0; i < n; i++) ans = min(ans, dist_from_point_to_seg(p[i], p[(i + 1) % n], z));
+        return ans;
+    }
+    auto [r, l] = tangents_from_point_to_polygon(p, z);
+    if(l > r) r += n;
+    while (l < r) {
+        int mid = (l + r) >> 1;
+        double left = dist2(p[mid % n], z), right= dist2(p[(mid + 1) % n], z);
+        ans = min({ans, left, right});
+        if(left < right) r = mid;
+        else l = mid + 1;
+    }
+    ans = sqrt(ans);
+    ans = min(ans, dist_from_point_to_seg(p[l % n], p[(l + 1) % n], z));
+    ans = min(ans, dist_from_point_to_seg(p[l % n], p[(l - 1 + n) % n], z));
+    return ans;
+}
+// minimum distance from convex polygon p to line ab
+// returns 0 is it intersects with the polygon
+// top - upper right vertex
+double dist_from_polygon_to_line(vector<PT> &p, PT a, PT b, int top) { //O(log n)
+	PT orth = (b - a).perp();
+	if (orientation(a, b, p[0]) > 0) orth = (a - b).perp();
+	int id = extreme_vertex(p, orth, top);
+	if (dot(p[id] - a, orth) > 0) return 0.0; //if orth and a are in the same half of the line, then poly and line intersects
+	return dist_from_point_to_line(a, b, p[id]); //does not intersect
+}
+// minimum distance from a convex polygon to another convex polygon
+// the polygon doesnot overlap or touch
+// tested in https://toph.co/p/the-wall
+double dist_from_polygon_to_polygon(vector<PT> &p1, vector<PT> &p2) { // O(n log n)
+    double ans = inf;
+    for (int i = 0; i < p1.size(); i++) {
+        ans = min(ans, dist_from_point_to_polygon(p2, p1[i]));
+    }
+    for (int i = 0; i < p2.size(); i++) {
+        ans = min(ans, dist_from_point_to_polygon(p1, p2[i]));
+    }
+    return ans;
+}
+// maximum distance from a convex polygon to another convex polygon
+double maximum_dist_from_polygon_to_polygon(vector<PT> &u, vector<PT> &v){ //O(n)
+    int n = (int)u.size(), m = (int)v.size();
+    double ans = 0;
+    if (n < 3 || m < 3) {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) ans = max(ans, dist2(u[i], v[j]));
+        }
+        return sqrt(ans);
+    }
+    if (u[0].x > v[0].x) swap(n, m), swap(u, v);
+    int i = 0, j = 0, step = n + m + 10;
+    while (j + 1 < m && v[j].x < v[j + 1].x) j++ ;
+    while (step--) {
+        if (cross(u[(i + 1)%n] - u[i], v[(j + 1)%m] - v[j]) >= 0) j = (j + 1) % m;
+        else i = (i + 1) % n;
+        ans = max(ans, dist2(u[i], v[j]));
+    }
+    return sqrt(ans);
+}
+
 // calculates the area of the union of n polygons (not necessarily convex). 
 // the points within each polygon must be given in CCW order.
 // complexity: O(N^2), where N is the total number of points
@@ -1041,7 +1053,7 @@ vector<PT> minkowski_sum(vector<PT> &a, vector<PT> &b) {
     int i = 0, j = 0; //assuming a[i] and b[j] both are (left, bottom)-most points
     vector<PT> c;
     c.push_back(a[i] + b[j]);
-    while (i + 1 < n || j + 1 < m){
+    while (1) {
         PT p1 = a[i] + b[(j + 1) % m];
         PT p2 = a[(i + 1) % n] + b[j];
         int t = orientation(c.back(), p1, p2);
@@ -1098,7 +1110,7 @@ double polygon_circle_intersection(vector<PT> &v, PT p, double r) {
         if (x < 0) ans -= area;
         else ans += area;
     }
-    return ans * 0.5;
+    return abs(ans);
 }
 // find a circle of radius r that contains as many points as possible
 // O(n^2 log n);
@@ -1120,7 +1132,7 @@ double maximum_circle_cover(vector<PT> p, double r, circle &c) {
             if (st <= -PI) st += PI * 2;
             if (ed > PI) ed -= PI * 2;
             if (ed <= -PI) ed += PI * 2;
-            events.push_back({st, +1});
+            events.push_back({st - eps, +1}); // take care of precisions!
             events.push_back({ed, -1});
             if (st > ed) {
                 events.push_back({-PI, +1});
