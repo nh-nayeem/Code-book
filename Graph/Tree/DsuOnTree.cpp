@@ -32,7 +32,7 @@ void dsu(int u, int p, bool keep) {
   }
   if (bigchild != -1) dsu(bigchild, u, 1), big[bigchild] = 1;
   add(u, p, 1);
-  ans[u] = cnt[u];
+  //build the anser form cnt[c]
   if (bigchild != -1) big[bigchild] = 0;
   if (keep == 0) add(u, p, -1);
 }
