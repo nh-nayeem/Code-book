@@ -1,0 +1,8 @@
+PowerTower:
+inline ll MOD(ll x, ll m) { if (x < m) return x; return x % m + m; }
+// if x >= log2(m), then a^x = a^(MOD(x, phi(m))) % m
+ll yo(ll l, ll r, ll m) {
+  if (l == r) return MOD(a[l], m);
+  if (m == 1) return 1;
+  return power(a[l], yo(l + 1, r, phi(m)), m); 
+}
