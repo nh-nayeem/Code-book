@@ -1,77 +1,83 @@
-const int MAXN = 5000+5 ;
-typedef long long T;
-const T INF = 1e15 ;
-const T eps = 0;
-struct edge {
-    int a, b;
-    T cap,flow;
-    int yo, x, y;
-};
+const int N = 5010;
+
+const long long inf = 1LL << 61;
 struct Dinic {
-    int s,t,d[MAXN], ptr[MAXN] ;
-    vector<edge>e;
-    vector<int>g[MAXN];
-    void init() {
-        e.clear();
-        memset(d,0,sizeof(d));
-        for(int i = 0; i < MAXN ; i++)g[i].clear();
+  struct edge {
+    int to, rev;
+    long long flow, w;
+    int id;
+  };
+  int n, s, t, mxid;
+  vector<int> d, flow_through;
+  vector<int> done;
+  vector<vector<edge>> g;
+  Dinic() {}
+  Dinic(int _n) {
+    n = _n + 10;
+    mxid = 0;
+    g.resize(n);
+  }
+  void add_edge(int u, int v, long long w, int id = -1) {
+    edge a = {v, (int)g[v].size(), 0, w, id};
+    edge b = {u, (int)g[u].size(), 0, 0, -2};//for bidirectional edges cap(b) = w
+    g[u].emplace_back(a);
+    g[v].emplace_back(b);
+    mxid = max(mxid, id);
+  }
+  bool bfs() {
+    d.assign(n, -1);
+    d[s] = 0;
+    queue<int> q;
+    q.push(s);
+    while (!q.empty()) {
+      int u = q.front();
+      q.pop();
+      for (auto &e : g[u]) {
+        int v = e.to;
+        if (d[v] == -1 && e.flow < e.w) d[v] = d[u] + 1, q.push(v);
+      }
     }
-    void addEdge(int a,int b,T cap, int x = -1, int y= -1) {
-        edge e1 = { a, b, cap, 0, 1, x, y } ;
-        edge e2 = { b, a, 0, 0, 0, x, y } ;
-        g[a].push_back((int)e.size());
-        e.push_back(e1);
-        g[b].push_back((int)e.size());
-        e.push_back(e2);
-    }
-    bool bfs() {
-        queue < int > Q ;
-        Q.push(s);
-        memset(d,-1,sizeof(d));
-        d[s]=0 ;
-        while (!Q.empty()) {
-            int u=Q.front() ;
-            Q.pop() ;
-            for(int i=0; i<g[u].size(); i++) {
-                int id=g[u][i];
-                int v=e[id].b;
-              //  printf("%d %d %0.3lf %0.3lf\n",u,v,e[id].cap,e[id].flow);
-                if(d[v]==-1&&e[id].flow<e[id].cap) {
-                    Q.push(v) ;
-                    d[v]=d[u]+1 ;
-                }
-            }
+    return d[t] != -1;
+  }
+  long long dfs(int u, long long flow) {
+    if (u == t) return flow;
+    for (int &i = done[u]; i < (int)g[u].size(); i++) {
+      edge &e = g[u][i];
+      if (e.w <= e.flow) continue;
+      int v = e.to;
+      if (d[v] == d[u] + 1) {
+        long long nw = dfs(v, min(flow, e.w - e.flow));
+        if (nw > 0) {
+          e.flow += nw;
+          g[v][e.rev].flow -= nw;
+          return nw;
         }
-        return d[t]!=-1 ;
+      }
     }
-    T dfs(int u,T flow) {
-        if (flow<=eps)  return 0 ;
-        if ( u==t )  return flow ;
-        for(int& i = ptr[u] ; i<g[u].size(); i++) {
-            int id = g[u][i];
-            int v =  e[id].b ;
-            if ( d[v] != d[u]+1 )  continue ;
-            T pushed = dfs (v,min (flow,e[id].cap-e[id].flow)) ;
-            //cout << "pushed " << pushed << endl;
-            if (pushed>eps) {
-                e [id].flow+=pushed ;
-                e [id^1].flow-=pushed ;
-                return pushed ;
-            }
-        }
-        return 0 ;
+    return 0;
+  }
+  long long max_flow(int _s, int _t) {
+    s = _s;
+    t = _t;
+    long long flow = 0;
+    while (bfs()) {
+      done.assign(n, 0);
+      while (long long nw = dfs(s, inf)) flow += nw;
     }
-    T dinic() {
-        T flow = 0 ;
-        while(true) {
-            if(!bfs())  break ;
-            memset(ptr, 0, sizeof(ptr)) ;
-            while (true){
-                T pushed = dfs(s,INF );
-                if(pushed<=eps)break;
-                flow += pushed ;
-            }
-        }
-        return flow ;
-    }
+    flow_through.assign(mxid + 10, 0);
+    for(int i = 0; i < n; i++) for(auto e : g[i]) if(e.id >= 0) flow_through[e.id] = e.flow;
+    return flow;
+  }
 };
+int main() {
+  int n, m;
+  cin >> n >> m;
+  Dinic F(n + 1);
+  for (int i = 1; i <= m; i++) {
+    int u, v, w;
+    cin >> u >> v >> w;
+    F.add_edge(u, v, w);
+  }
+  cout << F.max_flow(1, n) << '\n';
+  return 0;
+}
